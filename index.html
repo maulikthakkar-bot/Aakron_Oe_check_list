@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Order Entry Checklist</title>
+<style>
+:root {
+  --ink:#0f1923; --ink2:#3a4a58; --ink3:#6b7f8e;
+  --paper:#f5f7f9; --white:#fff; --rule:#dde3e9;
+  --blue:#1a56db; --blue-lt:#e8f0fe;
+  --gold:#e8a020; --gold-lt:#fef6e4;
+  --green:#1a7f4b; --green-lt:#e6f4ee;
+  --red:#c8232c; --red-lt:#fdecea;
+  --amber:#b45309; --amber-lt:#fef3c7;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --r:10px; --rs:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh}
+
+/* ── Top bar ── */
+.top-bar{background:var(--ink);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.top-left{display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;background:var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.top-bar h1{font-size:16px;font-weight:800}
+.top-bar p{font-size:11px;color:rgba(255,255,255,.5);margin-top:1px}
+.top-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.prog-num{font-size:15px;font-weight:800;color:var(--gold)}
+.prog-lbl{font-size:11px;color:rgba(255,255,255,.5)}
+
+/* ── Sync status pill ── */
+.sync-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;transition:.3s}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#888;transition:.3s;flex-shrink:0}
+.sync-pill.syncing .sync-dot{background:#f59e0b;animation:pulse .8s infinite}
+.sync-pill.saved   .sync-dot{background:#22c55e}
+.sync-pill.error   .sync-dot{background:#ef4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Progress bar ── */
+.prog-bar-wrap{background:rgba(0,0,0,.2);height:4px;position:sticky;top:66px;z-index:99}
+#progBar{height:100%;background:var(--gold);width:0%;transition:width .35s ease}
+
+/* ── Shell ── */
+.shell{max-width:860px;margin:0 auto;padding:0 16px 80px}
+
+/* ── Section card ── */
+.section{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--shadow);margin-top:20px;overflow:hidden;transition:opacity .25s,box-shadow .25s}
+.section-head{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--rule);background:var(--paper);cursor:pointer;user-select:none}
+.sec-num{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-title{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.01em;display:flex;align-items:center;gap:6px}
+.sec-sub{font-size:11px;color:var(--ink3);margin-top:1px}
+.sec-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+
+/* ── Progressive accordion ── */
+.sec-chevron{margin-left:auto;font-size:12px;color:var(--ink3);transition:transform .2s;flex-shrink:0}
+.section.collapsed .sec-chevron{transform:rotate(-90deg)}
+.section.collapsed .sec-body{display:none}
+.sec-lock-badge{display:none;font-size:10px;font-weight:800;color:var(--ink3);background:var(--rule);padding:2px 8px;border-radius:10px;letter-spacing:.03em}
+.section.locked .sec-lock-badge{display:inline-flex;align-items:center;gap:3px}
+.section.locked{opacity:.5}
+.section.locked .section-head{cursor:not-allowed}
+.section.locked .sec-num{background:var(--ink3)}
+.section.done:not(.locked) .sec-num{background:var(--green)}
+.section.done:not(.locked) .section-head{background:var(--green-lt)}
+
+/* ── Fields ── */
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:180px}
+.field.half{flex:1 1 calc(50% - 6px);min-width:180px}
+.field.third{flex:1 1 calc(33% - 8px);min-width:140px}
+label{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+label .req{color:var(--red);margin-left:2px}
+label .hint{font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink3);margin-left:5px;font-size:11px}
+input[type=text],input[type=number],input[type=date],input[type=email],select,textarea{width:100%;border:1.5px solid var(--rule);border-radius:var(--rs);padding:8px 11px;font-size:13px;color:var(--ink);background:#fff;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+input.filled,select.filled{border-color:var(--green);background:var(--green-lt)}
+
+/* ── Missing / invalid field highlighting ── */
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+input.invalid,select.invalid,textarea.invalid{border-color:var(--red)!important;background:var(--red-lt)!important;box-shadow:0 0 0 3px rgba(200,35,44,.15)!important;animation:shakeX .4s}
+.chk-row.invalid{border-color:var(--red)!important;background:var(--red-lt)!important;animation:shakeX .4s}
+.chk-row.invalid .chk-box{border-color:var(--red)}
+.invalid-group{border:1.5px solid var(--red)!important;border-radius:8px;padding:8px;background:var(--red-lt);animation:shakeX .4s}
+.missing-note{font-size:11px;color:var(--red);font-weight:700;margin-top:4px;display:none;align-items:center;gap:4px}
+.missing-note.show{display:flex}
+
+/* ── Radio pills ── */
+.radio-group{display:flex;gap:8px;flex-wrap:wrap}
+.rpill{border:1.5px solid var(--rule);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .13s;color:var(--ink2);background:#fff;user-select:none}
+.rpill:hover{border-color:var(--blue);color:var(--blue)}
+.rpill.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.rpill.rush.active{background:var(--red);border-color:var(--red)}
+.rpill.hq.active{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+.rpill.hr.active{background:var(--amber);border-color:var(--amber);color:#fff}
+
+/* ── Check rows ── */
+.chk-row{display:flex;align-items:flex-start;gap:11px;padding:10px 14px;border:1.5px solid var(--rule);border-radius:var(--rs);cursor:pointer;transition:background .13s,border-color .13s;user-select:none}
+.chk-row:hover{background:var(--blue-lt);border-color:var(--blue)}
+.chk-row.checked{background:var(--green-lt);border-color:var(--green)}
+.chk-row.cond{background:var(--amber-lt);border-color:var(--amber)}
+.chk-box{width:20px;height:20px;border:2px solid var(--rule);border-radius:5px;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .13s;margin-top:1px}
+.chk-row.checked .chk-box{background:var(--green);border-color:var(--green)}
+.chk-box svg{display:none}
+.chk-row.checked .chk-box svg{display:block}
+.chk-label{font-size:13px;font-weight:600;color:var(--ink)}
+.chk-desc{font-size:11.5px;color:var(--ink3);margin-top:2px}
+
+/* ── Divider ── */
+.divider{height:1px;background:var(--rule);margin:4px 0}
+
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;margin-left:8px}
+.badge.cond{background:var(--amber-lt);color:var(--amber)}
+
+/* ── Action bar ── */
+.action-bar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:2px solid var(--rule);padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(0,0,0,.08);z-index:90}
+.save-info{display:flex;flex-direction:column;gap:2px}
+.save-info-main{font-size:13px;font-weight:700;color:var(--ink)}
+.save-info-sub{font-size:11px;color:var(--ink3)}
+.action-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:var(--rs);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(26,86,219,.3)}
+.btn-primary:hover{background:#1346b8}
+.btn-primary:disabled{background:var(--rule);color:var(--ink3);box-shadow:none;cursor:not-allowed}
+.btn-ghost{background:var(--paper);color:var(--ink2);border:1.5px solid var(--rule)}
+.btn-ghost:hover{border-color:var(--ink2)}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{background:#156038}
+.btn-danger{background:var(--red-lt);color:var(--red);border:1.5px solid rgba(200,35,44,.3)}
+.btn-danger:hover{background:var(--red);color:#fff}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(15,25,35,.65);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:var(--r);box-shadow:0 8px 40px rgba(0,0,0,.25);width:100%;max-width:580px;max-height:88vh;overflow-y:auto}
+.modal-head{padding:22px 24px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:flex-start;justify-content:space-between}
+.modal-head h2{font-size:18px;font-weight:800}
+.modal-head p{font-size:12px;color:var(--ink3);margin-top:3px}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink3);padding:0 0 0 12px;line-height:1}
+.modal-body{padding:20px 24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--rule);display:flex;gap:10px;flex-wrap:wrap}
+
+/* ── Summary grid ── */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sum-item{background:var(--paper);border-radius:var(--rs);padding:10px 12px}
+.sum-lbl{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink3);letter-spacing:.05em}
+.sum-val{font-size:13px;font-weight:600;color:var(--ink);margin-top:2px}
+.sum-val.ok{color:var(--green)}
+.sum-val.warn{color:var(--red)}
+.sum-full{grid-column:1/-1}
+
+/* ── Drive status banner ── */
+.drive-banner{background:var(--green-lt);border:1.5px solid var(--green);border-radius:var(--rs);padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--green);margin-top:14px}
+.drive-banner.error{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+.drive-banner.pending{background:var(--amber-lt);border-color:var(--amber);color:var(--amber)}
+
+/* ── Orders table ── */
+.orders-table{width:100%;border-collapse:collapse;font-size:12px}
+.orders-table th{text-align:left;padding:8px 12px;background:var(--paper);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);border-bottom:1px solid var(--rule)}
+.orders-table td{padding:9px 12px;border-bottom:1px solid var(--rule);color:var(--ink2)}
+.orders-table tr:hover td{background:var(--blue-lt)}
+.orders-table td:first-child{font-weight:700;color:var(--ink)}
+.type-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:800;text-transform:uppercase}
+.type-STANDARD{background:var(--blue-lt);color:var(--blue)}
+.type-RUSH{background:var(--red-lt);color:var(--red)}
+.type-HQ{background:var(--gold-lt);color:var(--amber)}
+.type-24HOUR{background:#fce7f3;color:#9d174d}
+.ok-tag{background:var(--green-lt);color:var(--green);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+
+/* ── Setup notice ── */
+.setup-notice{background:linear-gradient(135deg,#1a1a2e,#1e3a5f);color:#fff;border-radius:var(--r);padding:20px 24px;margin-top:20px;display:flex;gap:16px;align-items:flex-start}
+.setup-notice .icon{font-size:32px;flex-shrink:0}
+.setup-notice h3{font-size:14px;font-weight:800;margin-bottom:6px;color:var(--gold)}
+.setup-notice p{font-size:12px;color:rgba(255,255,255,.7);line-height:1.6}
+.setup-notice code{background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:11px;color:#FFD700}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:400;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){.field.half,.field.third{flex:0 0 100%;min-width:0}.sum-grid{grid-template-columns:1fr}.action-bar{flex-wrap:wrap}}
+@media print{.top-bar,.action-bar,.btn,#summaryModal,#ordersModal,.toast{display:none!important}body{background:#fff}.section{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- ══ TOP BAR ══════════════════════════════════════════ -->
+<div class="top-bar">
+  <div class="top-left">
+    <div class="logo">📋</div>
+    <div>
+      <h1>Order Entry Checklist</h1>
+      <p id="topSubtitle" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        Complete every section
+        <span style="color:rgba(255,255,255,.3)">·</span>
+        <button id="driveToggleBtn" onclick="toggleDriveSync()"
+          style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+          border-radius:20px;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;
+          cursor:pointer;letter-spacing:.03em;transition:all .2s">
+          ⏸ Drive Sync: ON
+        </button>
+      </p>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="sync-pill" id="syncPill">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncTxt">Not configured</span>
+    </div>
+    <span class="prog-lbl">Done:</span>
+    <span class="prog-num" id="progNum">0%</span>
+    <button class="btn btn-ghost" onclick="openOrders()" style="font-size:12px;padding:6px 12px">📁 Orders</button>
+    <button class="btn btn-ghost" onclick="openSettings()" style="font-size:12px;padding:6px 12px" title="Drive Sync Settings">⚙️ Settings</button>
+  </div>
+</div>
+<div class="prog-bar-wrap"><div id="progBar"></div></div>
+
+<div class="shell">
+
+<!-- Drive Sync Status Banner — always visible, click to manage -->
+<div id="driveSyncBanner" style="border-radius:var(--r);margin-top:20px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid var(--rule)">
+
+  <!-- Main status row -->
+  <div style="padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--white)">
+    <div id="driveBannerIcon" style="font-size:28px;flex-shrink:0">☁️</div>
+    <div style="flex:1;min-width:180px">
+      <div id="driveBannerTitle" style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:2px">
+        Google Drive Sync — Not Configured
+      </div>
+      <div id="driveBannerDesc" style="font-size:11.5px;color:var(--ink3);line-height:1.5">
+        Add your Apps Script URL to auto-save every order to Google Sheets.
+      </div>
+      <div id="driveBannerUrl" style="font-size:11px;color:var(--ink3);font-family:monospace;margin-top:4px;display:none;word-break:break-all;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-ghost" id="driveTestBtn" onclick="testCurrentConnection()"
+        style="font-size:12px;padding:7px 12px;display:none">🔌 Test</button>
+      <button class="btn" id="driveSettingsBtn" onclick="openSettings()"
+        style="background:var(--blue);color:#fff;font-size:12px;padding:8px 16px;
+        box-shadow:0 2px 8px rgba(26,86,219,.25)">
+        ⚙️ Drive Settings
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick info strip — steps shown when not configured -->
+  <div id="driveStepsStrip" style="background:var(--blue-lt);border-top:1px solid rgba(26,86,219,.12);padding:10px 18px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+    <div style="font-size:11.5px;color:var(--ink2);line-height:1.7;flex:1">
+      <b style="color:var(--blue)">First time setup:</b>
+      Open Google Sheets → <b>Extensions → Apps Script</b> → paste <b>google-apps-script.js</b> → Run → Authorize →
+      <b>Deploy → New deployment → Web app</b> → set access to <b>"Anyone"</b> → copy URL →
+      click <b>⚙️ Drive Settings</b> and paste URL → Save &amp; Apply.
+    </div>
+    <div style="font-size:11px;color:var(--ink3);flex-shrink:0;white-space:nowrap;padding-top:2px">
+      Need help? <a href="https://script.google.com" target="_blank"
+        style="color:var(--blue);font-weight:700">Open Apps Script ↗</a>
+    </div>
+  </div>
+
+  <!-- Connected strip — shown when URL is saved -->
+  <div id="driveConnectedStrip" style="display:none;background:var(--green-lt);border-top:1px solid rgba(26,127,75,.15);padding:9px 18px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--green);font-weight:600;flex:1">
+      ✅ Connected to Google Sheet · Every saved order goes there automatically
+    </span>
+    <button onclick="openSettings()"
+      style="font-size:11px;font-weight:700;color:var(--green);background:transparent;border:1px solid var(--green);border-radius:20px;padding:3px 12px;cursor:pointer">
+      Change URL
+    </button>
+  </div>
+
+</div>
+
+<!-- ══ SECTION 1: ORDER INFO ══════════════════════════════ -->
+<div class="section" data-sec="1">
+  <div class="section-head" onclick="toggleSection(this)">
+    <div class="sec-num">1</div>
+    <div><div class="sec-title">Order Information <span class="sec-lock-badge">🔒 Locked</span></div><div class="sec-sub">Core identifiers for this order</div></div>
+    <div class="sec-chevron">▾</div>
+  </div>
+  <div class="sec-body">
+    <div class="row">
+      <div class="field half">
+        <label>Name of Person <span class="req">*</span></label>
+        <select id="personName" class="tr" data-label="Person Name">
+          <option value="">— Select —</option>
+          <option>NANDINI_9926</option>
+          <option>ZANISH_9925</option>
+          <option>NEELAM_9938</option>
+          <option>SANGITA_9943</option>
+          <option>PARIKSHIT_7893</option>
+          <option>LADDU_8512</option>
+          <option>PRAVIN_8521</option>
+          <option>RAJENDRA_8326</option>
+          <option>SANJYOT_9394</option>
+          <option>PARTH_8314</option>
+          <option>SANDHYA_9039</option>
+        </select>
+      </div>
+      <div class="field half">
+        <label>Order # <span class="req">*</span></label>
+        <input type="text" id="orderNum" class="tr" data-label="Order #" placeholder="e.g. 1968201"/>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field half">
+        <label>Customer PO # <span class="req">*</span></label>
+        <input type="text" id="custPO" class="tr" data-label="Customer PO #" placeholder="e.g. PO-88123"/>
+      </div>
+      <div class="field half">
+        <label>Site <span class="req">*</span></label>
+        <div class="radio-group" id="siteGrp">
+          <div class="rpill" onclick="setRadio('siteGrp','site',this,'NY')">NY</div>
+          <div class="rpill" onclick="setRadio('siteGrp','site',this,'TN')">TN</div>
+          <div class="rpill" onclick="setRadio('siteGrp','site',this,'FN')">FN</div>
+        </div>
+        <input type="hidden" id="site" class="tr" data-label="Site"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Order Type <span class="req">*</span></label>
+      <div class="radio-group" id="typeGrp">
+        <div class="rpill"      onclick="setRadio('typeGrp','orderType',this,'STANDARD')">Standard</div>
+        <div class="rpill rush" onclick="setRadio('typeGrp','orderType',this,'RUSH')">⚡ Rush</div>
+        <div class="rpill hq"   onclick="setRadio('typeGrp','orderType',this,'HQ')">★ HQ</div>
+        <div class="rpill hr"   onclick="setRadio('typeGrp','orderType',this,'24HOUR')">🔥 24 Hour</div>
+        <div class="rpill hr"   onclick="setRadio('typeGrp','orderType',this,'PSA')">⚡ PSA</div>
+        <div class="rpill hr"   onclick="setRadio('typeGrp','orderType',this,'PSA')">★ Spec Sample</div>
+        <div class="rpill hr"   onclick="setRadio('typeGrp','orderType',this,'PSA')">★LQP</div>
+      </div>
+      <input type="hidden" id="orderType" class="tr" data-label="Order Type"/>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 2: CUSTOMER VERIFICATION ══════════════════ -->
+<div class="section locked collapsed" data-sec="2">
+  <div class="section-head" onclick="toggleSection(this)">
+    <div class="sec-num">2</div>
+    <div><div class="sec-title">Customer Representative Verification <span class="sec-lock-badge">🔒 Locked</span></div><div class="sec-sub">Confirm contact and address details</div></div>
+    <div class="sec-chevron">▾</div>
+  </div>
+  <div class="sec-body">
+    <div class="field">
+      <label>Customer Representative</label>
+      <input type="text" id="custRep" class="tr" data-label="Customer Rep" placeholder="Full name of customer representative"/>
+    </div>
+    <div class="chk-row tr-chk" id="chk-email" onclick="toggleChk(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">✉️ Verify Additional Email Address & Proof Email matches PO</div><div class="chk-desc">All email addresses confirmed against Purchase Order</div></div>
+    </div>
+    <div class="chk-row tr-chk" id="chk-billto" onclick="toggleChk(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">💳 Bill To — Verified</div><div class="chk-desc">Billing address confirmed and matches PO</div></div>
+    </div>
+    <div class="chk-row tr-chk" id="chk-shipto" onclick="toggleChk(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">📦 Ship To — Verified</div><div class="chk-desc">Shipping address confirmed and matches PO</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 3: ITEM DETAILS ════════════════════════════ -->
+<div class="section locked collapsed" data-sec="3">
+  <div class="section-head" onclick="toggleSection(this)">
+    <div class="sec-num">3</div>
+    <div><div class="sec-title">Item Details <span class="sec-lock-badge">🔒 Locked</span></div><div class="sec-sub">Product and pricing</div></div>
+    <div class="sec-chevron">▾</div>
+  </div>
+  <div class="sec-body">
+    <div class="row">
+      <div class="field half"><label>Item # <span class="req">*</span></label><input type="text" id="itemNum" class="tr" data-label="Item #" placeholder="e.g. 28640"/></div>
+      <div class="field half"><label>Quantity <span class="req">*</span></label><input type="number" id="qty" class="tr" data-label="Quantity" placeholder="e.g. 500" min="1"/></div>
+    </div>
+    <div class="row">
+      <div class="field half"><label>Item Price <span class="req">*</span></label><input type="text" id="itemPrice" class="tr" data-label="Item Price" placeholder="e.g. $4.75"/></div>
+      <div class="field half"><label>Item Color <span class="req">*</span></label><input type="text" id="itemColor" class="tr" data-label="Item Color" placeholder="e.g. Red / White"/></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 4: ADD-ON CHARGES ═════════════════════════ -->
+<div class="section locked collapsed" data-sec="4">
+  <div class="section-head" onclick="toggleSection(this)">
+    <div class="sec-num">4</div>
+    <div><div class="sec-title">Add-On Charges Verification <span class="sec-lock-badge">🔒 Locked</span></div><div class="sec-sub">Verify all applicable charges against the PO</div></div>
+    <div class="sec-chevron">▾</div>
+  </div>
+  <div class="sec-body">
+    <div class="field">
+      <label>🚚 3rd Party / Collect Fee — Mentioned on PO? <span class="req">*</span></label>
+      <div style="display:flex;gap:8px;margin-top:4px" id="party3BtnRow">
+        <button type="button" id="party3Yes" onclick="set3rdParty('yes')"
+          style="flex:1;padding:10px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s">
+          ✅ Yes — Charge on PO
+        </button>
+        <button type="button" id="party3No" onclick="set3rdParty('no')"
+          style="flex:1;padding:10px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s">
+          ❌ No — Not on PO
+        </button>
+      </div>
+      <input type="hidden" id="party3Val" class="tr" data-label="3rd Party/Collect Fee"/>
+      <!-- YES: show shipper account # field -->
+      <div id="party3YesWrap" style="display:none;margin-top:10px;animation:fadeIn .2s ease">
+        <div style="background:var(--green-lt);border:1.5px solid var(--green);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">✅</span>
+          <span>3rd Party / Collect Fee applies — enter the Shipper Account # in <b>Section 6 Shipping</b> below.</span>
+        </div>
+      </div>
+      <!-- NO: no action needed -->
+      <div id="party3NoWrap" style="display:none;margin-top:10px;background:var(--paper);border:1.5px solid var(--rule);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--ink3);animation:fadeIn .2s ease">
+        ℹ️ No 3rd Party / Collect Fee on this PO — no shipper account # needed.
+      </div>
+    </div>
+    <div class="chk-row tr-chk cond" id="chk-eproof" onclick="toggleEproof(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">📧 Email Proof Charge <span class="badge cond">Conditional</span></div><div class="chk-desc">Required if: PO requests it · Order over $1,000 · HQ order type · <b>Checking this makes eProof Date required</b></div></div>
+    </div>
+    <div class="chk-row tr-chk cond" id="chk-setup" onclick="toggleChk(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">⚙️ Setup Charge — Verified against Price Summary</div><div class="chk-desc">Cross-check setup charge amount with the Price Summary document</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 5: DATES ════════════════════════════════════ -->
+<div class="section locked collapsed" data-sec="5">
+  <div class="section-head" onclick="toggleSection(this)">
+    <div class="sec-num">5</div>
+    <div><div class="sec-title">Key Dates <span class="sec-lock-badge">🔒 Locked</span></div><div class="sec-sub" id="datesSub">Ship Date &amp; In-Hand Date required · eProof Date required only if Email Proof Charge is checked</div></div>
+    <div class="sec-chevron">▾</div>
+  </div>
+  <div class="sec-body">
+    <div class="row">
+      <div class="field third" id="eproofDateWrap" style="display:none">
+        <label>eProof Date <span class="req" id="eproofReq">*</span>
+          <span style="background:#e8f0fe;color:#1a56db;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;text-transform:none;letter-spacing:0">Required — Proof charge checked</span>
+        </label>
+        <input type="date" id="eproofDate" class="tr" data-label="eProof Date"/>
+        <div style="font-size:11px;color:var(--ink3);margin-top:3px">Required because Email Proof Charge is checked</div>
+      </div>
+      <div class="field third"><label>Ship Date <span class="req">*</span></label><input type="date" id="shipDate" class="tr" data-label="Ship Date"/></div>
+      <div class="field third" id="inhandWrap">
+        <label>In-Hand Date on PO? <span class="req">*</span></label>
+        <div style="display:flex;gap:8px;margin-top:4px" id="inhandBtnRow">
+          <button type="button" id="inhandYes" onclick="setInhand('yes')"
+            style="flex:1;padding:9px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s">
+            &#x2705; Yes
+          </button>
+          <button type="button" id="inhandNo" onclick="setInhand('no')"
+            style="flex:1;padding:9px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s">
+            &#x274C; No
+          </button>
+        </div>
+        <input type="hidden" id="inhandMentioned" class="tr" data-label="In-Hand Date on PO"/>
+        <div id="inhandDateWrap" style="display:none;margin-top:8px">
+          <label style="margin-bottom:4px;display:block;font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em">Select In-Hand Date <span style="color:var(--red)">*</span></label>
+          <input type="date" id="inhandDate" class="tr" data-label="In-Hand Date"/>
+        </div>
+        <div id="inhandNoMsg" style="display:none;margin-top:8px;background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:6px;padding:8px 11px;font-size:12px;color:var(--amber);font-weight:600">
+          &#x2139;&#xFE0F; No In-Hand Date on PO &mdash; not required
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 6: SHIPPING ════════════════════════════════ -->
+<div class="section locked collapsed" data-sec="6">
+  <div class="section-head" onclick="toggleSection(this)">
+    <div class="sec-num">6</div>
+    <div><div class="sec-title">Shipping Details <span class="sec-lock-badge">🔒 Locked</span></div><div class="sec-sub">Carrier and account information</div></div>
+    <div class="sec-chevron">▾</div>
+  </div>
+  <div class="sec-body">
+    <div class="row">
+      <div class="field half">
+        <label>Ship Via <span class="req">*</span></label>
+        <select id="shipVia" class="tr" data-label="Ship Via">
+          <option value="">— Select Carrier —</option>
+          <optgroup label="UPS">
+            <option>UPS Ground</option><option>UPS 2nd Day Air</option>
+            <option>UPS Next Day Air</option><option>UPS Next Day Air Saver</option>
+            <option>UPS 3 Day Select</option>
+            <option>UPS GROUND OVERIGHT</option>
+          </optgroup>
+          <optgroup label="FedEx">
+            <option>FedEx Ground</option><option>FedEx Express Saver</option>
+            <option>FedEx 2Day</option><option>FedEx Standard Overnight</option>
+            <option>FedEx Priority Overnight</option>
+          </optgroup>
+          <optgroup label="Other">
+            <option>USPS Priority Mail</option><option>DHL Express</option>
+            <option>Freight / LTL</option><option>Customer Pickup</option><option>Other</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field half">
+        <label>Shipper Number <span class="req">*</span></label>
+        <div style="display:flex;gap:7px;margin-top:2px" id="shipTypeBtnRow">
+          <button type="button" id="shipBtn-prepaid" onclick="setShipperType('Prepaid/Charge')"
+            style="flex:1;padding:9px 4px;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s;line-height:1.3">
+            💳 Prepaid/<br/>Charge
+          </button>
+          <button type="button" id="shipBtn-receiver" onclick="setShipperType('Receiver')"
+            style="flex:1;padding:9px 4px;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s;line-height:1.3">
+            📦 Receiver
+          </button>
+          <button type="button" id="shipBtn-thirdparty" onclick="setShipperType('Third Party')"
+            style="flex:1;padding:9px 4px;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s;line-height:1.3">
+            🚚 Third<br/>Party
+          </button>
+        </div>
+        <input type="hidden" id="shipperNum" class="tr" data-label="Shipper #"/>
+      </div>
+    </div>
+    <!-- Shipper Account # — shown for Receiver or Third Party only -->
+    <div class="field" id="shipNumCustomWrap" style="display:none">
+      <div style="background:var(--blue-lt);border:1.5px solid var(--blue);border-radius:6px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:20px;flex-shrink:0" id="shipAcctIcon">📦</span>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px" id="shipAcctTitle">Receiver — Enter Shipper Account Number</div>
+          <label style="font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block">
+            Shipper Account # <span style="color:var(--red)">*</span>
+          </label>
+          <input type="text" id="shipNumCustom" class="tr" data-label="Shipper Acct #"
+            placeholder="Enter account number from PO"
+            style="width:100%;border:1.5px solid rgba(26,86,219,.3);border-radius:var(--rs);padding:8px 11px;font-size:13px;font-weight:700;color:var(--ink);background:#fff;outline:none"/>
+        </div>
+      </div>
+    </div>
+    <!-- Shown when 3rd Party is YES in Section 4 -->
+    <div class="field" id="sec6ShipAcctWrap" style="display:none">
+      <div style="background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px;flex-shrink:0">🚚</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:2px">3rd Party / Collect Fee applies</div>
+          <div style="font-size:11.5px;color:var(--ink2);line-height:1.5">Enter the Shipper Account # in the <b>Shipper Number</b> field above (Receiver or Third Party option).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION 7: FINAL VERIFICATION ═════════════════════ -->
+<div class="section locked collapsed" data-sec="7">
+  <div class="section-head" onclick="toggleSection(this)">
+    <div class="sec-num">7</div>
+    <div><div class="sec-title">Final Verification Checklist <span class="sec-lock-badge">🔒 Locked</span></div><div class="sec-sub">All boxes must be checked before saving</div></div>
+    <div class="sec-chevron">▾</div>
+  </div>
+  <div class="sec-body">
+    <div class="chk-row tr-chk" id="chk-attachments" onclick="toggleChk(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">📎 Verify Attachments</div><div class="chk-desc">All required files are attached and accessible</div></div>
+    </div>
+    <div class="chk-row tr-chk" id="chk-emailedart" onclick="toggleChk(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">🖼️ Verify Emailed Art</div><div class="chk-desc">Artwork has been emailed and confirmed received</div></div>
+    </div>
+    <div class="field" id="orderKindWrap">
+      <label>🔄 Order Type — Repeat or New Order? <span class="req">*</span></label>
+      <div style="display:flex;gap:8px;margin-top:4px" id="kindBtnRow">
+        <button type="button" id="kindRepeat" onclick="setOrderKind('repeat')"
+          style="flex:1;padding:10px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s">
+          🔄 Repeat Order
+        </button>
+        <button type="button" id="kindNew" onclick="setOrderKind('new')"
+          style="flex:1;padding:10px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s">
+          ✨ New Order
+        </button>
+      </div>
+      <input type="hidden" id="orderKind" class="tr" data-label="Repeat or New Order"/>
+      <!-- REPEAT: show verify checklist -->
+      <div id="kindRepeatWrap" style="display:none;margin-top:10px;animation:fadeIn .2s ease">
+        <div style="background:var(--blue-lt);border:1.5px solid var(--blue);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--ink2);margin-bottom:8px;line-height:1.6">
+          🔄 <b>Repeat Order</b> — verify all repeat info below:
+        </div>
+        <div class="chk-row tr-chk" id="chk-repeatverify" onclick="toggleChk(this)">
+          <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div>
+            <div class="chk-label">✅ Artwork Verified &amp; Order Number Verified</div>
+            <div class="chk-desc" style="margin-top:5px;display:flex;flex-direction:column;gap:4px">
+              <span style="display:flex;align-items:center;gap:6px"><span style="color:var(--green);font-size:13px">🖼</span> <b>Artwork Verified</b> — artwork matches previous repeat order</span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="color:var(--blue);font-size:13px">🔢</span> <b>Order Number Verified</b> — order number matches and is consistent with prior repeat order records</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- NEW: just confirm -->
+      <div id="kindNewWrap" style="display:none;margin-top:10px;background:var(--green-lt);border:1.5px solid var(--green);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--green);font-weight:600;animation:fadeIn .2s ease">
+        ✨ New Order — no repeat verification needed.
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="field">
+      <label>Imprint Color <span class="req">*</span><span class="hint">— e.g. Black, White, Red/Blue</span></label>
+      <input type="text" id="imprintColor" class="tr" data-label="Imprint Color"
+        placeholder="e.g. Black, White, Red / Blue, PMS 286C"/>
+    </div>
+    <div class="field">
+      <label>Imprint Location <span class="req">*</span><span class="hint">— Select all that apply</span></label>
+      <div class="radio-group" id="imprintGrp">
+        <div class="rpill" onclick="toggleImprint(this,'Side 1')">Side 1</div>
+        <div class="rpill" onclick="toggleImprint(this,'Side 2')">Side 2</div>
+        <div class="rpill" onclick="toggleImprint(this,'Wrap')">Wrap</div>
+        <div class="rpill" onclick="toggleImprint(this,'N/A')">N/A (Non-Drinkware)</div>
+      </div>
+      <input type="hidden" id="imprintLoc" class="tr" data-label="Imprint Location"/>
+      <div style="font-size:11px;color:var(--ink3);margin-top:4px">📌 Drinkware: select Side 1 / Side 2 / Wrap &nbsp;·&nbsp; Other products: select N/A</div>
+    </div>
+    <div class="divider"></div>
+    <div class="chk-row tr-chk" id="chk-tracking" onclick="toggleChk(this)">
+      <div class="chk-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="chk-label">📝 Verify ALL Tracking Notes</div><div class="chk-desc">Contact info verified · All tracking notes reviewed and complete</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<!-- ══ ACTION BAR ══════════════════════════════════════════ -->
+<div class="action-bar" id="actionBar" style="display:none">
+  <div class="save-info">
+    <div class="save-info-main" id="saveMain">Fill in all sections to save</div>
+    <div class="save-info-sub" id="saveSub">0 of 0 items complete</div>
+  </div>
+  <div id="allDoneBadge" style="display:none;background:var(--green-lt);color:var(--green);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700">✅ All sections complete</div>
+  <div class="action-right">
+    <button class="btn btn-ghost" onclick="resetForm()">↺ Reset</button>
+    <button class="btn btn-primary" id="saveBtn" onclick="saveOrder()"
+      style="position:relative;overflow:hidden">
+      <span id="saveBtnIcon">💾</span>
+      <span id="saveBtnTxt">Save to Drive</span>
+      <span id="saveBtnProgress" style="position:absolute;bottom:0;left:0;height:3px;background:rgba(255,255,255,.4);width:0%;transition:width .3s"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ SUMMARY MODAL ═══════════════════════════════════════ -->
+<div class="modal-bg" id="summaryModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h2>✅ Order Saved</h2><p id="sumTime"></p></div>
+      <button class="modal-close" onclick="closeModal('summaryModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="sum-grid" id="sumGrid"></div>
+      <div id="driveBanner"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-success" onclick="newOrder()">➕ New Order</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ Print</button>
+      <button class="btn btn-ghost" onclick="closeModal('summaryModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ORDERS MODAL ════════════════════════════════════════ -->
+<div class="modal-bg" id="ordersModal">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-head">
+      <div><h2>📁 Saved Orders</h2><p id="ordersCount">Loading…</p></div>
+      <button class="modal-close" onclick="closeModal('ordersModal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;overflow-x:auto">
+      <table class="orders-table" id="ordersTable">
+        <thead><tr><th>Order #</th><th>PO #</th><th>Type</th><th>Person</th><th>Ship Date</th><th>In-Hand</th><th>Status</th><th></th></tr></thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+      <div id="noOrders" style="padding:32px;text-align:center;color:var(--ink3);font-size:13px">No orders saved yet.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="exportCSV()">📊 Export CSV</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ Print</button>
+      <button class="btn btn-danger" onclick="clearAllOrders()" style="margin-left:auto">🗑 Clear All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIG MODAL ════════════════════════════════════════ -->
+<!-- ══ SETTINGS MODAL ══════════════════════════════════════ -->
+<div class="modal-bg" id="configModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <div>
+        <h2>⚙️ Google Drive Sync Settings</h2>
+        <p>Connect to your Google Sheet to auto-save every order</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('configModal')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- Current status card -->
+      <div id="settingsStatusCard" style="border-radius:var(--rs);padding:12px 16px;display:flex;align-items:center;gap:12px;border:1.5px solid var(--rule);background:var(--paper)">
+        <span id="settingsStatusIcon" style="font-size:24px">☁️</span>
+        <div style="flex:1">
+          <div id="settingsStatusTitle" style="font-size:13px;font-weight:700;color:var(--ink)">Not configured</div>
+          <div id="settingsStatusUrl"   style="font-size:11px;color:var(--ink3);font-family:monospace;margin-top:2px;word-break:break-all"></div>
+        </div>
+        <button id="settingsClearBtn" onclick="clearConfig()" style="display:none;background:var(--red-lt);color:var(--red);border:1px solid rgba(200,35,44,.3);border-radius:var(--rs);padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">
+          ✕ Remove
+        </button>
+      </div>
+
+      <!-- How-to steps -->
+      <div style="background:var(--blue-lt);border-radius:var(--rs);padding:14px 16px;font-size:12px;color:var(--ink2);line-height:1.8;border:1px solid rgba(26,86,219,.15)">
+        <div style="font-weight:800;color:var(--blue);margin-bottom:6px;font-size:13px">📋 How to get your Apps Script URL</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span><b style="color:var(--blue)">1.</b> Open Google Sheets → <b>Extensions → Apps Script</b></span>
+          <span><b style="color:var(--blue)">2.</b> Paste the <b>google-apps-script.js</b> code → click 💾 Save</span>
+          <span><b style="color:var(--blue)">3.</b> Click ▶ <b>Run</b> → Authorize when prompted</span>
+          <span><b style="color:var(--blue)">4.</b> Click <b>Deploy → New deployment → Web app</b></span>
+          <span><b style="color:var(--blue)">5.</b> Set <i>Who has access</i> to <b>"Anyone"</b> → Deploy</span>
+          <span><b style="color:var(--blue)">6.</b> Copy the Web App URL → paste below ↓</span>
+        </div>
+      </div>
+
+      <!-- URL input -->
+      <div class="field">
+        <label>New Apps Script Web App URL</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="appsScriptUrl"
+            placeholder="https://script.google.com/macros/s/.../exec"
+            style="font-size:12px;font-family:monospace;flex:1"/>
+          <button class="btn btn-ghost" onclick="pasteUrl()" style="font-size:12px;padding:8px 12px;flex-shrink:0" title="Paste from clipboard">📋</button>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px">Replacing the URL will switch to the new Google Sheet immediately</div>
+      </div>
+
+      <!-- Test result -->
+      <div id="urlTestResult" style="font-size:12px;display:none;border-radius:var(--rs);padding:10px 14px;font-weight:600"></div>
+
+      <!-- Drive sync toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--paper);border-radius:var(--rs);padding:10px 14px;border:1px solid var(--rule)">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--ink)">Drive Sync</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">Enable or disable saving to Google Sheet</div>
+        </div>
+        <button id="settingsToggleBtn" onclick="toggleDriveSync()"
+          style="border-radius:20px;border:none;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s">
+          ⏸ ON
+        </button>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <button class="btn btn-ghost" onclick="testConnection()">🔌 Test Connection</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeModal('configModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveConfig()">💾 Save & Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
+const STORAGE_KEY   = 'orderEntryOrders_v2';
+const DRAFT_KEY     = 'orderEntryDraft_v2';
+const CONFIG_KEY    = 'orderEntryConfig';
+const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBL-U_lT1wTbIaZAgR8V5Rb7XLhXs0vJw7yiJVTG0Ccoq3g6wpknjBuRavf8i9RYdr/exec';
+let APPS_SCRIPT_URL = DEFAULT_APPS_SCRIPT_URL;
+
+let driveSyncEnabled = true; // default ON (can be toggled)
+
+function toggleDriveSync() {
+  driveSyncEnabled = !driveSyncEnabled;
+  const btn = document.getElementById('driveToggleBtn');
+  if (driveSyncEnabled) {
+    btn.textContent = '⏸ Drive Sync: ON';
+    btn.style.background = 'rgba(255,255,255,.12)';
+    btn.style.borderColor = 'rgba(255,255,255,.2)';
+    setSyncStatus('ready', APPS_SCRIPT_URL ? 'Drive sync enabled' : 'Not configured');
+    showToast('Drive sync enabled', 'success');
+  } else {
+    btn.textContent = '▶ Drive Sync: OFF';
+    btn.style.background = 'rgba(239,68,68,.35)';
+    btn.style.borderColor = 'rgba(239,68,68,.5)';
+    setSyncStatus('off', 'Drive sync disabled');
+    showToast('Drive sync disabled — orders save locally only');
+  }
+  updateDriveBannerStatus();
+  updateSettingsCard();
+  // Persist preference
+  try {
+    const c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+    c.driveEnabled = driveSyncEnabled;
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
+  } catch(e) {}
+}
+
+function loadConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+    APPS_SCRIPT_URL = c.url || DEFAULT_APPS_SCRIPT_URL;
+    if (c.driveEnabled === false) {
+      driveSyncEnabled = false;
+      const btn = document.getElementById('driveToggleBtn');
+      if (btn) { btn.textContent = '▶ Drive Sync: OFF'; btn.style.background='rgba(239,68,68,.35)'; btn.style.borderColor='rgba(239,68,68,.5)'; }
+      setSyncStatus('off', 'Drive sync disabled');
+    }
+    if (APPS_SCRIPT_URL && driveSyncEnabled) {
+      setSyncStatus('ready', 'Drive sync active');
+    } else if (!APPS_SCRIPT_URL) {
+      setSyncStatus('off', 'Not configured');
+    }
+    updateDriveBannerStatus();
+    updateSettingsCard();
+    updateDriveToggleBtn(driveSyncEnabled);
+  } catch(e) {}
+}
+
+function saveConfig() {
+  const urlInput = document.getElementById('appsScriptUrl');
+  const url = (urlInput?.value || '').trim();
+
+  if (url && !url.includes('script.google.com')) {
+    showToast('⚠️ Please enter a valid Apps Script URL', 'error'); return;
+  }
+
+  const isNew = url && url !== APPS_SCRIPT_URL;
+  if (url) {
+    APPS_SCRIPT_URL = url;
+    if (urlInput) urlInput.value = '';
+  }
+
+  // Persist
+  try {
+    const c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+    if (url) c.url = url;
+    c.driveEnabled = driveSyncEnabled;
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
+  } catch(e) {}
+
+  driveSyncEnabled = true;
+  updateDriveToggleBtn(true);
+  updateDriveBannerStatus();
+  updateSettingsCard();
+  setSyncStatus('ready', 'Drive sync active');
+  closeModal('configModal');
+
+  if (isNew) showToast('✅ New URL saved — Drive sync active!', 'success');
+  else showToast('✅ Settings saved', 'success');
+}
+
+async function testConnection() {
+  const inputUrl = (document.getElementById('appsScriptUrl')?.value || '').trim();
+  const urlToTest = inputUrl || APPS_SCRIPT_URL;
+  const el = document.getElementById('urlTestResult');
+
+  if (!urlToTest) {
+    showToast('Enter a URL first', 'error'); return;
+  }
+
+  el.style.display = 'block';
+  el.style.background = 'var(--amber-lt)';
+  el.style.border = '1px solid var(--amber)';
+  el.style.color = 'var(--amber)';
+  el.textContent = '⏳ Testing connection…';
+
+  try {
+    const r = await fetch(urlToTest, { method: 'GET', mode: 'cors' });
+    const d = await r.json();
+    if (d.status) {
+      el.style.background = 'var(--green-lt)';
+      el.style.border = '1px solid var(--green)';
+      el.style.color = 'var(--green)';
+      el.textContent = '✅ Connection successful! Google Sheet is ready to receive orders.';
+    } else throw new Error();
+  } catch(e) {
+    el.style.background = 'var(--red-lt)';
+    el.style.border = '1px solid var(--red)';
+    el.style.color = 'var(--red)';
+    el.textContent = '❌ Could not connect. Check the URL and make sure access is set to "Anyone" in Apps Script.';
+  }
+}
+
+// Paste from clipboard
+async function pasteUrl() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const inp = document.getElementById('appsScriptUrl');
+    if (inp) { inp.value = text; inp.focus(); showToast('URL pasted ✓'); }
+  } catch(e) { showToast('Paste manually with Ctrl+V', 'error'); }
+}
+
+// Clear/remove current URL
+function clearConfig() {
+  if (!confirm('Reset to the default Google Drive connection?')) return;
+  APPS_SCRIPT_URL = DEFAULT_APPS_SCRIPT_URL;
+  try {
+    const c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+    delete c.url;
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(c));
+  } catch(e) {}
+  updateDriveBannerStatus();
+  updateSettingsCard();
+  setSyncStatus('ready', 'Drive sync active');
+  showToast('Reset to default Drive connection');
+}
+
+function openConfig() { openSettings(); }  // keep backward compat
+
+function openSettings() {
+  updateSettingsCard();
+  const inp = document.getElementById('appsScriptUrl');
+  if (inp) inp.value = '';
+  const res = document.getElementById('urlTestResult');
+  if (res) res.style.display = 'none';
+  document.getElementById('configModal').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════════
+// DRIVE BANNER + SETTINGS CARD UPDATE HELPERS
+// ══════════════════════════════════════════════════════
+
+function updateDriveBannerStatus() {
+  const icon       = document.getElementById('driveBannerIcon');
+  const title      = document.getElementById('driveBannerTitle');
+  const desc       = document.getElementById('driveBannerDesc');
+  const urlEl      = document.getElementById('driveBannerUrl');
+  const stepsStrip = document.getElementById('driveStepsStrip');
+  const connStrip  = document.getElementById('driveConnectedStrip');
+  const testBtn    = document.getElementById('driveTestBtn');
+  const banner     = document.getElementById('driveSyncBanner');
+
+  if (!icon) return;
+
+  if (!APPS_SCRIPT_URL) {
+    // Not configured
+    icon.textContent  = '☁️';
+    title.textContent = 'Google Drive Sync — Not Configured';
+    title.style.color = 'var(--ink)';
+    desc.textContent  = 'Add your Apps Script URL to auto-save every order to Google Sheets.';
+    urlEl.style.display   = 'none';
+    stepsStrip.style.display = 'flex';
+    if (connStrip) connStrip.style.display = 'none';
+    if (testBtn)   testBtn.style.display   = 'none';
+    banner.style.borderColor = 'var(--rule)';
+  } else if (!driveSyncEnabled) {
+    // Configured but disabled
+    icon.textContent  = '⏸️';
+    title.textContent = 'Google Drive Sync — Disabled';
+    title.style.color = 'var(--amber)';
+    desc.textContent  = 'Sync is paused. Orders save locally only. Click Drive Settings to re-enable.';
+    urlEl.textContent = APPS_SCRIPT_URL;
+    urlEl.style.display   = 'block';
+    stepsStrip.style.display = 'none';
+    if (connStrip) connStrip.style.display = 'none';
+    if (testBtn)   testBtn.style.display   = 'inline-flex';
+    banner.style.borderColor = 'var(--amber)';
+  } else {
+    // Configured + enabled
+    icon.textContent  = '✅';
+    title.textContent = 'Google Drive Sync — Active';
+    title.style.color = 'var(--green)';
+    desc.textContent  = 'All orders auto-save to your Google Sheet.';
+    urlEl.textContent = APPS_SCRIPT_URL;
+    urlEl.style.display   = 'block';
+    stepsStrip.style.display = 'none';
+    if (connStrip) { connStrip.style.display = 'flex'; }
+    if (testBtn)   testBtn.style.display   = 'inline-flex';
+    banner.style.borderColor = 'var(--green)';
+  }
+}
+
+function updateSettingsCard() {
+  const card     = document.getElementById('settingsStatusCard');
+  const iconEl   = document.getElementById('settingsStatusIcon');
+  const titleEl  = document.getElementById('settingsStatusTitle');
+  const urlEl    = document.getElementById('settingsStatusUrl');
+  const clearBtn = document.getElementById('settingsClearBtn');
+  const togBtn   = document.getElementById('settingsToggleBtn');
+  if (!card) return;
+
+  if (!APPS_SCRIPT_URL) {
+    card.style.background   = 'var(--paper)';
+    card.style.borderColor  = 'var(--rule)';
+    if (iconEl)  iconEl.textContent  = '☁️';
+    if (titleEl) titleEl.textContent = 'No URL configured yet';
+    if (titleEl) titleEl.style.color = 'var(--ink3)';
+    if (urlEl)   urlEl.textContent   = 'Paste your Apps Script URL below and click Save & Apply';
+    if (clearBtn) clearBtn.style.display = 'none';
+  } else {
+    card.style.background   = driveSyncEnabled ? 'var(--green-lt)' : 'var(--amber-lt)';
+    card.style.borderColor  = driveSyncEnabled ? 'var(--green)'    : 'var(--amber)';
+    if (iconEl)  iconEl.textContent  = driveSyncEnabled ? '✅' : '⏸️';
+    if (titleEl) {
+      titleEl.textContent = driveSyncEnabled ? 'Connected & Active' : 'Connected but Disabled';
+      titleEl.style.color = driveSyncEnabled ? 'var(--green)' : 'var(--amber)';
+    }
+    if (urlEl) {
+      urlEl.textContent = APPS_SCRIPT_URL;
+      urlEl.style.display = 'block';
+    }
+    if (clearBtn) clearBtn.style.display = 'inline-flex';
+  }
+
+  // Sync toggle button state
+  if (togBtn) {
+    togBtn.textContent       = driveSyncEnabled ? '⏸ ON — Click to Disable' : '▶ OFF — Click to Enable';
+    togBtn.style.background  = driveSyncEnabled ? 'var(--green)'  : 'var(--red-lt)';
+    togBtn.style.color       = driveSyncEnabled ? '#fff'          : 'var(--red)';
+    togBtn.style.border      = driveSyncEnabled ? 'none'          : '1.5px solid var(--red)';
+  }
+}
+
+function updateDriveToggleBtn(enabled) {
+  // Top-bar button
+  const btn = document.getElementById('driveToggleBtn');
+  if (btn) {
+    btn.textContent       = enabled ? '⏸ Drive Sync: ON' : '▶ Drive Sync: OFF';
+    btn.style.background  = enabled ? 'rgba(255,255,255,.12)' : 'rgba(239,68,68,.35)';
+    btn.style.borderColor = enabled ? 'rgba(255,255,255,.2)'  : 'rgba(239,68,68,.5)';
+  }
+}
+
+async function testCurrentConnection() {
+  if (!APPS_SCRIPT_URL) { showToast('No URL configured yet', 'error'); return; }
+  showToast('⏳ Testing connection…');
+  try {
+    const r = await fetch(APPS_SCRIPT_URL, { method: 'GET', mode: 'cors' });
+    const d = await r.json();
+    if (d.status) showToast('✅ Connection successful!', 'success');
+    else throw new Error();
+  } catch(e) {
+    showToast('❌ Connection failed — check your URL', 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SYNC STATUS
+// ══════════════════════════════════════════════════════
+function setSyncStatus(state, text) {
+  const pill = document.getElementById('syncPill');
+  const dot  = document.getElementById('syncDot');
+  const txt  = document.getElementById('syncTxt');
+  pill.className = 'sync-pill ' + (state === 'saving' ? 'syncing' : state === 'saved' ? 'saved' : state === 'error' ? 'error' : '');
+  txt.textContent = text;
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESSIVE ACCORDION — step-by-step section unlocking
+// ══════════════════════════════════════════════════════
+const TOTAL_SECTIONS = 7;
+
+// Which field/check ids "belong" to each section (used only to show a
+// green ✓ "done" state on that section's header — doesn't block anything)
+const SECTION_MAP = {
+  1: ['personName','orderNum','custPO','site','orderType'],
+  2: ['chk-email','chk-billto','chk-shipto'],
+  3: ['itemNum','qty','itemPrice','itemColor'],
+  4: ['party3Val'],
+  5: ['shipDate','inhandMentioned'],
+  6: ['shipVia','shipperNum'],
+  7: ['chk-attachments','chk-emailedart','orderKind','imprintColor','imprintLoc','chk-tracking'],
+};
+
+function getSectionEl(num) {
+  return document.querySelector('.section[data-sec="'+num+'"]');
+}
+
+// Manual expand/collapse — locked sections can't be opened by clicking
+function toggleSection(headEl) {
+  const sec = headEl.closest('.section');
+  if (sec.classList.contains('locked')) {
+    const n = sec.dataset.sec;
+    showToast('🔒 Complete Section '+(n-1)+' first', 'error');
+    return;
+  }
+  sec.classList.toggle('collapsed');
+}
+
+// Unlock + auto-open a section (called once the previous one is touched)
+function unlockSection(num, silent) {
+  if (num > TOTAL_SECTIONS) return;
+  const sec = getSectionEl(num);
+  if (!sec) return;
+  if (sec.classList.contains('locked')) {
+    sec.classList.remove('locked');
+    sec.classList.remove('collapsed');
+    if (!silent) showToast('➡️ Section '+num+' unlocked', 'success');
+  }
+}
+
+// Any real answer inside a section unlocks the next one automatically.
+// 'input'/'change' = typed text, picked date/dropdown value.
+// 'click' only counts on the custom pill/button/checkbox-row controls
+// (they don't fire native change events), not on a stray click elsewhere.
+function handleSectionTouch(e) {
+  const sec = e.target.closest && e.target.closest('.section[data-sec]');
+  if (!sec) return;
+  if (e.type === 'click' && !e.target.closest('.rpill, .chk-row, button')) return;
+  const num = parseInt(sec.dataset.sec, 10);
+  unlockSection(num + 1);
+}
+document.addEventListener('input', handleSectionTouch, true);
+document.addEventListener('change', handleSectionTouch, true);
+document.addEventListener('click', handleSectionTouch, true);
+
+// Mark a section "done" (green header) once all its own fields are filled
+function updateSectionDoneStates() {
+  Object.entries(SECTION_MAP).forEach(([num, ids]) => {
+    const sec = getSectionEl(num);
+    if (!sec) return;
+    const allFilled = ids.every(id => {
+      const el = document.getElementById(id);
+      if (!el) return true;
+      if (el.classList && el.classList.contains('tr-chk')) return el.classList.contains('checked');
+      return String(el.value || '').trim() !== '';
+    });
+    sec.classList.toggle('done', allFilled);
+  });
+}
+
+// Re-lock and collapse every section except the first (used on reset)
+function resetAccordion() {
+  for (let n = 1; n <= TOTAL_SECTIONS; n++) {
+    const sec = getSectionEl(n);
+    if (!sec) continue;
+    sec.classList.remove('done');
+    if (n === 1) {
+      sec.classList.remove('locked', 'collapsed');
+    } else {
+      sec.classList.add('locked', 'collapsed');
+    }
+  }
+}
+
+// While restoring a saved draft, unlock every section silently so the
+// user can see/edit everything they'd already filled in
+function unlockAllSections() {
+  for (let n = 1; n <= TOTAL_SECTIONS; n++) unlockSection(n, true);
+}
+
+// ══════════════════════════════════════════════════════
+// VALIDATION — highlight missing fields + red toast
+// ══════════════════════════════════════════════════════
+const CHK_LABELS = {
+  'chk-email': 'Verify Email Address matches PO',
+  'chk-billto': 'Bill To — Verified',
+  'chk-shipto': 'Ship To — Verified',
+  'chk-attachments': 'Verify Attachments',
+  'chk-emailedart': 'Verify Emailed Art',
+  'chk-tracking': 'Verify ALL Tracking Notes',
+  'chk-repeatverify': 'Artwork & Order Number Verified (Repeat Order)',
+};
+
+// Which section a field/check "lives in" + an optional wrapper element id
+// to highlight for button-driven fields that have no visible input of their own
+const FIELD_LOCATION = {
+  personName:{sec:1}, orderNum:{sec:1}, custPO:{sec:1}, site:{sec:1,group:'siteGrp'},
+  orderType:{sec:1,group:'typeGrp'},
+  'chk-email':{sec:2}, 'chk-billto':{sec:2}, 'chk-shipto':{sec:2},
+  itemNum:{sec:3}, qty:{sec:3}, itemPrice:{sec:3}, itemColor:{sec:3},
+  party3Val:{sec:4,group:'party3BtnRow'},
+  shipDate:{sec:5}, eproofDate:{sec:5}, inhandDate:{sec:5},
+  inhandMentioned:{sec:5,group:'inhandBtnRow'},
+  shipVia:{sec:6}, shipperNum:{sec:6,group:'shipTypeBtnRow'}, shipNumCustom:{sec:6},
+  'chk-attachments':{sec:7}, 'chk-emailedart':{sec:7}, 'chk-tracking':{sec:7},
+  orderKind:{sec:7,group:'kindBtnRow'}, imprintColor:{sec:7}, imprintLoc:{sec:7,group:'imprintGrp'},
+  'chk-repeatverify':{sec:7},
+};
+
+function fieldLabel(id) {
+  const el = document.getElementById(id);
+  if (el && el.dataset && el.dataset.label) return el.dataset.label;
+  return CHK_LABELS[id] || id;
+}
+
+// Clears all invalid marks — called whenever the form becomes valid again
+function clearInvalidMarks() {
+  document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+  document.querySelectorAll('.invalid-group').forEach(el => el.classList.remove('invalid-group'));
+}
+
+// Checks every required field/check; highlights what's missing in red,
+// reveals the section it lives in, and returns the list of missing labels
+function validateForm() {
+  clearInvalidMarks();
+  const missing = [];
+
+  const flagInput = (id) => {
+    const loc = FIELD_LOCATION[id];
+    const el = document.getElementById(id);
+    if (loc && loc.group) {
+      const g = document.getElementById(loc.group);
+      if (g) g.classList.add('invalid-group');
+    } else if (el && el.type !== 'hidden') {
+      el.classList.add('invalid');
+    }
+    if (loc) revealSection(loc.sec);
+    missing.push(fieldLabel(id));
+  };
+
+  REQ_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !String(el.value || '').trim()) flagInput(id);
+  });
+  BTN_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !String(el.value || '').trim()) flagInput(id);
+  });
+  REQ_CHECKS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('checked')) {
+      el.classList.add('invalid');
+      if (FIELD_LOCATION[id]) revealSection(FIELD_LOCATION[id].sec);
+      missing.push(fieldLabel(id));
+    }
+  });
+  REQ_CHECKS_DYNAMIC.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('checked')) {
+      el.classList.add('invalid');
+      if (FIELD_LOCATION[id]) revealSection(FIELD_LOCATION[id].sec);
+      missing.push(fieldLabel(id));
+    }
+  });
+
+  return missing;
+}
+
+// Force-unlock + expand a section so a highlighted field is actually visible,
+// even if the user hasn't reached it yet in the normal step-by-step flow
+function revealSection(num) {
+  const sec = getSectionEl(num);
+  if (!sec) return;
+  sec.classList.remove('locked', 'collapsed');
+}
+
+function scrollToFirstInvalid() {
+  const el = document.querySelector('.invalid, .invalid-group');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ══════════════════════════════════════════════════════
+// RADIO & CHECKBOX HELPERS
+// ══════════════════════════════════════════════════════
+function setRadio(grpId, hiddenId, el, val) {
+  document.querySelectorAll('#'+grpId+' .rpill').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const h = document.getElementById(hiddenId);
+  h.value = val; h.classList.add('filled');
+  if (hiddenId === 'orderType' && val === 'HQ') showToast('HQ order — Email Proof Charge required', 'info');
+  if (hiddenId === 'orderType' && (val === 'RUSH' || val === '24HOUR')) showToast('⚡ Rush order — verify all dates!', 'info');
+  checkProgress();
+}
+
+const imprintSel = new Set();
+function toggleImprint(el, val) {
+  if (val === 'N/A') {
+    imprintSel.clear();
+    document.querySelectorAll('#imprintGrp .rpill').forEach(b=>b.classList.remove('active'));
+    imprintSel.add('N/A'); el.classList.add('active');
+  } else {
+    const na = document.querySelector('#imprintGrp .rpill:last-child');
+    na && na.classList.remove('active'); imprintSel.delete('N/A');
+    if (imprintSel.has(val)) { imprintSel.delete(val); el.classList.remove('active'); }
+    else { imprintSel.add(val); el.classList.add('active'); }
+  }
+  const h = document.getElementById('imprintLoc');
+  h.value = [...imprintSel].join(', ');
+  if (h.value) h.classList.add('filled'); else h.classList.remove('filled');
+  checkProgress();
+}
+
+function toggleChk(el) {
+  el.classList.toggle('checked');
+  el.classList.remove('cond');
+  checkProgress();
+}
+
+function set3rdParty(choice) {
+  const yesBtn = document.getElementById('party3Yes');
+  const noBtn  = document.getElementById('party3No');
+  const yesWrap= document.getElementById('party3YesWrap');
+  const noWrap = document.getElementById('party3NoWrap');
+  const hidden = document.getElementById('party3Val');
+  const sec6   = document.getElementById('sec6ShipAcctWrap');
+
+  // Reset buttons
+  yesBtn.style.background='#fff'; yesBtn.style.color='var(--ink2)'; yesBtn.style.borderColor='var(--rule)';
+  noBtn.style.background='#fff';  noBtn.style.color='var(--ink2)';  noBtn.style.borderColor='var(--rule)';
+
+  if (choice === 'yes') {
+    yesBtn.style.background='var(--green)'; yesBtn.style.color='#fff'; yesBtn.style.borderColor='var(--green)';
+    yesWrap.style.display='block'; noWrap.style.display='none';
+    sec6.style.display='block'; sec6.style.animation='fadeIn .25s ease';
+    hidden.value='Yes'; hidden.classList.add('filled');
+    // Shipper Account # entered in Section 6 — no extra required field here
+  } else {
+    noBtn.style.background='var(--ink2)'; noBtn.style.color='#fff'; noBtn.style.borderColor='var(--ink2)';
+    yesWrap.style.display='none'; noWrap.style.display='block';
+    sec6.style.display='none';
+    hidden.value='No'; hidden.classList.add('filled');
+    // shipAcct not in REQ_FIELDS — handled in Section 6
+  }
+  checkProgress();
+}
+
+// Shipper Account # is only in Section 6 — no sync needed
+
+function toggleEproof(el) {
+  el.classList.toggle('checked');
+  el.classList.remove('cond');
+  const eproofChecked = el.classList.contains('checked');
+  const wrap  = document.getElementById('eproofDateWrap');
+  const input = document.getElementById('eproofDate');
+
+  if (eproofChecked) {
+    // Show eProof Date field and make it required
+    wrap.style.display = 'flex';
+    wrap.style.animation = 'fadeIn .25s ease';
+    if (!REQ_FIELDS.includes('eproofDate')) REQ_FIELDS.push('eproofDate');
+    showToast('eProof Date is now required', 'info');
+  } else {
+    // Hide eProof Date field and remove from required
+    wrap.style.display = 'none';
+    input.value = '';
+    input.classList.remove('filled');
+    REQ_FIELDS = REQ_FIELDS.filter(f => f !== 'eproofDate');
+    showToast('eProof Date removed — not required');
+  }
+  checkProgress();
+}
+
+function setInhand(choice) {
+  const yesBtn = document.getElementById('inhandYes');
+  const noBtn  = document.getElementById('inhandNo');
+  const dateWrap = document.getElementById('inhandDateWrap');
+  const noMsg    = document.getElementById('inhandNoMsg');
+  const hidden   = document.getElementById('inhandMentioned');
+  const dateInput= document.getElementById('inhandDate');
+
+  // Reset button styles
+  yesBtn.style.background = '#fff';
+  yesBtn.style.color = 'var(--ink2)';
+  yesBtn.style.borderColor = 'var(--rule)';
+  noBtn.style.background = '#fff';
+  noBtn.style.color = 'var(--ink2)';
+  noBtn.style.borderColor = 'var(--rule)';
+
+  if (choice === 'yes') {
+    // Highlight Yes button green
+    yesBtn.style.background = 'var(--green)';
+    yesBtn.style.color = '#fff';
+    yesBtn.style.borderColor = 'var(--green)';
+    // Show date picker, hide no-message
+    dateWrap.style.display = 'block';
+    dateWrap.style.animation = 'fadeIn .2s ease';
+    noMsg.style.display = 'none';
+    // Set hidden value & make date required
+    hidden.value = 'Yes';
+    hidden.classList.add('filled');
+    if (!REQ_FIELDS.includes('inhandDate')) REQ_FIELDS.push('inhandDate');
+    // Focus the date input for quick entry
+    setTimeout(() => dateInput.focus(), 50);
+  } else {
+    // Highlight No button amber
+    noBtn.style.background = 'var(--amber)';
+    noBtn.style.color = '#fff';
+    noBtn.style.borderColor = 'var(--amber)';
+    // Hide date picker, show no-message
+    dateWrap.style.display = 'none';
+    noMsg.style.display = 'block';
+    noMsg.style.animation = 'fadeIn .2s ease';
+    // Clear date, mark not required
+    dateInput.value = '';
+    dateInput.classList.remove('filled');
+    hidden.value = 'No';
+    hidden.classList.add('filled');
+    REQ_FIELDS = REQ_FIELDS.filter(f => f !== 'inhandDate');
+  }
+  checkProgress();
+}
+
+function setOrderKind(kind) {
+  const repBtn  = document.getElementById('kindRepeat');
+  const newBtn  = document.getElementById('kindNew');
+  const repWrap = document.getElementById('kindRepeatWrap');
+  const newWrap = document.getElementById('kindNewWrap');
+  const hidden  = document.getElementById('orderKind');
+
+  // Reset buttons
+  repBtn.style.background='#fff'; repBtn.style.color='var(--ink2)'; repBtn.style.borderColor='var(--rule)';
+  newBtn.style.background='#fff'; newBtn.style.color='var(--ink2)'; newBtn.style.borderColor='var(--rule)';
+
+  if (kind === 'repeat') {
+    repBtn.style.background='var(--blue)'; repBtn.style.color='#fff'; repBtn.style.borderColor='var(--blue)';
+    repWrap.style.display='block'; newWrap.style.display='none';
+    // Add repeat sub-checks to required checks dynamically
+    if (!REQ_CHECKS_DYNAMIC.includes('chk-repeatverify')) REQ_CHECKS_DYNAMIC.push('chk-repeatverify');
+    showToast('Repeat order — verify site and invoice below', 'info');
+  } else {
+    newBtn.style.background='var(--green)'; newBtn.style.color='#fff'; newBtn.style.borderColor='var(--green)';
+    repWrap.style.display='none'; newWrap.style.display='block';
+    // Remove repeat checks from required
+    REQ_CHECKS_DYNAMIC = REQ_CHECKS_DYNAMIC.filter(c => c !== 'chk-repeatverify');
+    // Uncheck them so they don't block save
+    ['chk-repeatverify'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('checked');
+    });
+    showToast('New order — no repeat verification needed');
+  }
+  hidden.value = kind === 'repeat' ? 'Repeat Order' : 'New Order';
+  hidden.classList.add('filled');
+  checkProgress();
+}
+
+function setShipperType(type) {
+  // Reset all 3 buttons
+  const btns = {
+    'Prepaid/Charge': document.getElementById('shipBtn-prepaid'),
+    'Receiver':       document.getElementById('shipBtn-receiver'),
+    'Third Party':    document.getElementById('shipBtn-thirdparty'),
+  };
+  Object.values(btns).forEach(b => {
+    if (!b) return;
+    b.style.background   = '#fff';
+    b.style.color        = 'var(--ink2)';
+    b.style.borderColor  = 'var(--rule)';
+  });
+
+  // Activate selected button
+  const active = btns[type];
+  if (active) {
+    const colors = {
+      'Prepaid/Charge': { bg: 'var(--blue)',  text: '#fff' },
+      'Receiver':       { bg: '#7c3aed',       text: '#fff' },
+      'Third Party':    { bg: 'var(--amber)',  text: '#fff' },
+    };
+    const c = colors[type] || { bg: 'var(--blue)', text: '#fff' };
+    active.style.background  = c.bg;
+    active.style.color       = c.text;
+    active.style.borderColor = c.bg;
+  }
+
+  // Set hidden input value
+  const hidden = document.getElementById('shipperNum');
+  hidden.value = type;
+  hidden.classList.add('filled');
+
+  // Show account # field only for Receiver or Third Party
+  const wrap     = document.getElementById('shipNumCustomWrap');
+  const icon     = document.getElementById('shipAcctIcon');
+  const titleEl  = document.getElementById('shipAcctTitle');
+  const input    = document.getElementById('shipNumCustom');
+
+  if (type === 'Receiver' || type === 'Third Party') {
+    wrap.style.display     = 'block';
+    wrap.style.animation   = 'fadeIn .2s ease';
+    // Update icon and label to match type
+    if (type === 'Receiver') {
+      if (icon)    icon.textContent    = '📦';
+      if (titleEl) titleEl.textContent = 'Receiver — Enter Shipper Account Number';
+      wrap.querySelector('div').style.background   = 'var(--blue-lt)';
+      wrap.querySelector('div').style.borderColor  = 'var(--blue)';
+      if (titleEl) titleEl.style.color = 'var(--blue)';
+      input.style.borderColor = 'rgba(26,86,219,.3)';
+    } else {
+      if (icon)    icon.textContent    = '🚚';
+      if (titleEl) titleEl.textContent = 'Third Party — Enter Shipper Account Number';
+      wrap.querySelector('div').style.background   = 'var(--amber-lt)';
+      wrap.querySelector('div').style.borderColor  = 'var(--amber)';
+      if (titleEl) titleEl.style.color = 'var(--amber)';
+      input.style.borderColor = 'rgba(180,83,9,.3)';
+    }
+    // Make account # required
+    if (!REQ_FIELDS.includes('shipNumCustom')) REQ_FIELDS.push('shipNumCustom');
+    setTimeout(() => input.focus(), 80);
+  } else {
+    // Prepaid/Charge — hide account field, not required
+    wrap.style.display = 'none';
+    input.value        = '';
+    input.classList.remove('filled');
+    REQ_FIELDS = REQ_FIELDS.filter(f => f !== 'shipNumCustom');
+  }
+
+  checkProgress();
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════════════════
+// eproofDate is NOT in base required list — it's added dynamically when chk-eproof is checked
+// Text/select/date inputs (visible fields)
+const REQ_FIELDS_BASE = ['personName','orderNum','custPO',
+  'itemNum','qty','itemPrice','itemColor','shipVia',
+  'shipDate','imprintColor']; // shipperNum moved to BTN_FIELDS (button-driven) // inhandDate + eproofDate added dynamically
+// Hidden inputs set by toggle buttons (radio/Yes-No selections)
+// Tracked separately so their .value is always checked, not .filled class
+const BTN_FIELDS = ['site','orderType','inhandMentioned','imprintLoc','party3Val','orderKind','shipperNum'];
+let REQ_FIELDS = [...REQ_FIELDS_BASE]; // mutable — eproofDate added/removed dynamically
+const REQ_CHECKS  = ['chk-email','chk-billto','chk-shipto',
+  'chk-attachments','chk-emailedart','chk-tracking'];
+// Dynamic checks added based on user selections (repeat order sub-checks)
+let REQ_CHECKS_DYNAMIC = [];
+
+function checkProgress() {
+  // ── Check if Order# and Person Name filled → show action bar ──────
+  const orderNumVal  = (document.getElementById('orderNum')?.value  || '').trim();
+  const personNameVal= (document.getElementById('personName')?.value || '').trim();
+  const actionBar    = document.getElementById('actionBar');
+  if (orderNumVal && personNameVal) {
+    actionBar.style.display = 'flex';
+    actionBar.style.animation = 'slideUp .3s ease';
+  } else {
+    actionBar.style.display = 'none';
+    return; // nothing else to compute yet
+  }
+
+  // ── Text / select / date inputs ──────────────────────────────────────
+  let fieldDone = 0;
+  REQ_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && String(el.value).trim()) {
+      fieldDone++;
+      if (el.type !== 'hidden') { el.classList.add('filled'); el.classList.remove('invalid'); }
+    } else if (el && el.type !== 'hidden') {
+      el.classList.remove('filled');
+    }
+  });
+
+  // ── Button-driven hidden inputs ──────────────────────────────────────
+  let btnDone = 0;
+  BTN_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && String(el.value).trim()) {
+      btnDone++;
+      const loc = FIELD_LOCATION[id];
+      if (loc && loc.group) document.getElementById(loc.group)?.classList.remove('invalid-group');
+    }
+  });
+
+  // ── Static checkboxes ────────────────────────────────────────────────
+  let chkDone = 0;
+  REQ_CHECKS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el?.classList.contains('checked')) { chkDone++; el.classList.remove('invalid'); }
+  });
+
+  // ── Dynamic checkboxes (repeat order) ────────────────────────────────
+  let dynDone = 0;
+  REQ_CHECKS_DYNAMIC.forEach(id => {
+    const el = document.getElementById(id);
+    if (el?.classList.contains('checked')) { dynDone++; el.classList.remove('invalid'); }
+  });
+
+  const done  = fieldDone + btnDone + chkDone + dynDone;
+  const total = REQ_FIELDS.length + BTN_FIELDS.length + REQ_CHECKS.length + REQ_CHECKS_DYNAMIC.length;
+  const pct   = Math.round(done / total * 100);
+
+  // ── Update UI ────────────────────────────────────────────────────────
+  document.getElementById('progBar').style.width  = pct + '%';
+  document.getElementById('progNum').textContent   = pct + '%';
+  document.getElementById('saveBtnProgress').style.width = pct + '%';
+
+  const ready = done >= total;
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.classList.toggle('not-ready', !ready);
+
+  if (ready) {
+    saveBtn.style.background = 'var(--green)';
+    saveBtn.style.boxShadow  = '0 3px 14px rgba(26,127,75,.45)';
+    document.getElementById('saveBtnIcon').textContent = '✅';
+    document.getElementById('saveBtnTxt').textContent  = 'Save to Drive';
+    document.getElementById('allDoneBadge').style.display = 'block';
+    document.getElementById('saveMain').textContent = '✅ All sections complete — ready to save!';
+  } else {
+    saveBtn.style.background = 'var(--blue)';
+    saveBtn.style.boxShadow  = '0 2px 8px rgba(26,86,219,.3)';
+    document.getElementById('saveBtnIcon').textContent = '💾';
+    document.getElementById('saveBtnTxt').textContent  = 'Save to Drive';
+    document.getElementById('allDoneBadge').style.display = 'none';
+    document.getElementById('saveMain').textContent = 'Complete all sections to save';
+  }
+  document.getElementById('saveSub').textContent = done + ' of ' + total + ' items complete (' + pct + '%)';
+
+  updateSectionDoneStates();
+  saveDraft();
+}
+
+// ══════════════════════════════════════════════════════
+// COLLECT DATA
+// ══════════════════════════════════════════════════════
+function collectData() {
+  const data = { timestamp: new Date().toISOString(), checks: {}, submittedBy: navigator.userAgent.substring(0,60) };
+  document.querySelectorAll('.tr').forEach(el => { data[el.id] = el.value; });
+  document.querySelectorAll('.tr-chk').forEach(el => { data.checks[el.id] = el.classList.contains('checked'); });
+  return data;
+}
+
+// ══════════════════════════════════════════════════════
+// DRAFT AUTO-SAVE
+// ══════════════════════════════════════════════════════
+function saveDraft() {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(collectData())); } catch(e) {}
+}
+
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY));
+    if (d) { unlockAllSections(); restoreData(d); showToast('Draft restored', 'info'); }
+  } catch(e) {}
+}
+
+function restoreData(data) {
+  document.querySelectorAll('.tr').forEach(el => {
+    if (data[el.id] !== undefined) { el.value = data[el.id]; if(data[el.id]) el.classList.add('filled'); }
+  });
+  if (data.site) { const b = document.querySelector(`#siteGrp [onclick*="'${data.site}'"]`); if(b) b.classList.add('active'); }
+  if (data.orderType) { const b = document.querySelector(`#typeGrp [onclick*="'${data.orderType}'"]`); if(b) b.classList.add('active'); }
+  if (data.imprintLoc) {
+    data.imprintLoc.split(', ').forEach(v=>{
+      imprintSel.add(v);
+      const b = document.querySelector(`#imprintGrp .rpill[onclick*="'${v}'"]`);
+      if(b) b.classList.add('active');
+    });
+  }
+  if (data.checks) {
+    Object.entries(data.checks).forEach(([id, v]) => {
+      const el = document.getElementById(id);
+      if (el && v) { el.classList.add('checked'); el.classList.remove('cond'); }
+    });
+    // Restore 3rd party
+    // Restore shipper type
+    if (data.shipperNum) setShipperType(data.shipperNum);
+    if (data.shipNumCustom) {
+      const el = document.getElementById('shipNumCustom');
+      if (el) { el.value = data.shipNumCustom; el.classList.add('filled'); }
+    }
+    if (data.party3Val === 'Yes') set3rdParty('yes');
+    else if (data.party3Val === 'No') set3rdParty('no');
+    // sec6ShipAcct input removed — no restore needed
+    // Restore order kind
+    if (data.orderKind === 'Repeat Order') setOrderKind('repeat');
+    else if (data.orderKind === 'New Order') setOrderKind('new');
+    // Restore inhand choice
+    if (data.inhandMentioned === 'Yes') setInhand('yes');
+    else if (data.inhandMentioned === 'No') setInhand('no');
+    if (data.inhandDate) {
+      document.getElementById('inhandDate').value = data.inhandDate;
+      document.getElementById('inhandDate').classList.add('filled');
+    }
+    if (data.checks['chk-eproof']) {
+      document.getElementById('eproofDateWrap').style.display='flex';
+      if (!REQ_FIELDS.includes('eproofDate')) REQ_FIELDS.push('eproofDate');
+    }
+  }
+  checkProgress();
+}
+
+// ══════════════════════════════════════════════════════
+// SAVE ORDER — local + Google Drive
+// ══════════════════════════════════════════════════════
+async function saveOrder() {
+  const missing = validateForm();
+  if (missing.length) {
+    const preview = missing.slice(0, 3).join(', ');
+    const extra = missing.length > 3 ? ` +${missing.length - 3} more` : '';
+    showToast('⚠️ Missing: ' + preview + extra, 'error');
+    scrollToFirstInvalid();
+    return;
+  }
+
+  const data = collectData();
+  data.id = Date.now();
+
+  // 1. Save locally
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) {}
+  orders.unshift(data);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  localStorage.removeItem(DRAFT_KEY);
+
+  // 2. Show summary immediately
+  showSummary(data, null);
+
+  // 3. Sync to Google Drive if configured
+  if (APPS_SCRIPT_URL) {
+    setSyncStatus('saving', 'Saving to Drive…');
+    try {
+      const resp = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'text/plain' },
+        mode: 'cors'
+      });
+
+      let result = {};
+      try {
+        result = await resp.json();
+      } catch (_) {
+        result = { success: resp.ok };
+      }
+
+      if (resp.ok && result.success !== false) {
+        setSyncStatus('saved', result.row ? `Saved ✓ Row ${result.row}` : 'Saved to Google Drive');
+        updateDriveBanner(true, result.row ? `Saved to Google Sheet — Row ${result.row}` : 'Order saved successfully.');
+        showToast('✅ Order saved to Google Drive', 'success');
+      } else {
+        throw new Error(result.error || `Server returned ${resp.status}`);
+      }
+    } catch(e) {
+      setSyncStatus('error', 'Sync failed');
+      updateDriveBanner(false, 'Drive sync failed: '+e.message+'. Order saved locally.');
+      showToast('⚠️ Drive sync failed — order saved locally', 'error');
+    }
+  } else {
+    updateDriveBanner(null, 'Drive sync not configured. Order saved locally only.');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SUMMARY MODAL
+// ══════════════════════════════════════════════════════
+function showSummary(data, driveResult) {
+  document.getElementById('sumTime').textContent = 'Saved on '+new Date(data.timestamp).toLocaleString();
+  const grid = document.getElementById('sumGrid');
+  const fields = [
+    ['Order #',data.orderNum],['Customer PO',data.custPO],
+    ['Order Type',data.orderType],['Site',data.site],
+    ['Person',data.personName],['Item #',data.itemNum],
+    ['Quantity',data.qty],['Item Price',data.itemPrice],
+    ['Ship Via',data.shipVia],['Shipper #',data.shipperNum],
+    ['eProof Date',data.eproofDate],['Ship Date',data.shipDate],
+    ['In-Hand Date',data.inhandDate],['Imprint',data.imprintLoc],['Imprint Color',data.imprintColor],
+  ];
+  grid.innerHTML = fields.map(([l,v])=>`
+    <div class="sum-item">
+      <div class="sum-lbl">${l}</div>
+      <div class="sum-val ${v?'ok':'warn'}">${v||'—'}</div>
+    </div>`).join('')+
+  `<div class="sum-item sum-full" style="background:var(--green-lt)">
+    <div class="sum-lbl">Verification</div>
+    <div class="sum-val ok">✓ All ${Object.values(data.checks).filter(Boolean).length} checks complete</div>
+  </div>`;
+  document.getElementById('summaryModal').classList.add('open');
+}
+
+function updateDriveBanner(success, msg) {
+  const el = document.getElementById('driveBanner');
+  if (success === true)  el.innerHTML = `<div class="drive-banner">☁️ ${msg}</div>`;
+  else if(success===false) el.innerHTML = `<div class="drive-banner error">⚠️ ${msg}</div>`;
+  else el.innerHTML = `<div class="drive-banner pending">💾 ${msg} <button class="btn btn-ghost" onclick="openConfig()" style="font-size:11px;padding:4px 10px;margin-left:8px">Set up Drive sync</button></div>`;
+}
+
+function newOrder() { closeModal('summaryModal'); resetForm(); window.scrollTo({top:0,behavior:'smooth'}); showToast('Ready for next order ✅','success'); }
+
+// ══════════════════════════════════════════════════════
+// ORDERS LIST
+// ══════════════════════════════════════════════════════
+function openOrders() {
+  renderOrders();
+  document.getElementById('ordersModal').classList.add('open');
+}
+
+function renderOrders() {
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) {}
+  document.getElementById('ordersCount').textContent = orders.length+' order'+(orders.length!==1?'s':'')+' saved locally';
+  const tbody = document.getElementById('ordersBody');
+  const none  = document.getElementById('noOrders');
+  if (!orders.length) { tbody.innerHTML=''; none.style.display='block'; return; }
+  none.style.display='none';
+  tbody.innerHTML = orders.map((o,i)=>`
+    <tr>
+      <td>${o.orderNum||'—'}</td>
+      <td>${o.custPO||'—'}</td>
+      <td><span class="type-tag type-${o.orderType||'STANDARD'}">${o.orderType||'—'}</span></td>
+      <td>${o.personName||'—'}</td>
+      <td>${o.shipDate||'—'}</td>
+      <td>${o.inhandDate||'—'}</td>
+      <td><span class="ok-tag">✓ Complete</span></td>
+      <td><button class="btn btn-danger" onclick="deleteOrder(${i})" style="font-size:11px;padding:3px 8px">✕</button></td>
+    </tr>`).join('');
+}
+
+function deleteOrder(i) {
+  if (!confirm('Delete this order?')) return;
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) {}
+  orders.splice(i,1);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  renderOrders(); showToast('Order deleted');
+}
+
+function clearAllOrders() {
+  if (!confirm('Delete ALL saved orders locally? (Google Sheet data is not affected)')) return;
+  localStorage.removeItem(STORAGE_KEY); renderOrders(); showToast('Local orders cleared');
+}
+
+function exportCSV() {
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) {}
+  if (!orders.length) { showToast('No orders to export','error'); return; }
+  const H = ['Timestamp','Order #','PO #','Type','Site','Person','Item #','Qty','Price','Color','Ship Via','Shipper #','eProof Date','Ship Date','In-Hand Date','Imprint','Imprint Color'];
+  const rows = orders.map(o=>[new Date(o.timestamp).toLocaleString(),o.orderNum,o.custPO,o.orderType,o.site,o.personName,o.itemNum,o.qty,o.itemPrice,o.itemColor,o.shipVia,o.shipperNum,o.eproofDate,o.shipDate,o.inhandDate,o.imprintLoc,o.imprintColor].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv = [H.join(','),...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'orders-'+Date.now()+'.csv'; a.click();
+  showToast('CSV exported ✓','success');
+}
+
+// ══════════════════════════════════════════════════════
+// RESET
+// ══════════════════════════════════════════════════════
+function resetForm() {
+  document.getElementById('actionBar').style.display='none';
+  document.querySelectorAll('.tr').forEach(el=>{el.value='';el.classList.remove('filled');});
+  document.querySelectorAll('.rpill').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tr-chk').forEach(el=>{
+    el.classList.remove('checked');
+    if(['chk-3rdparty','chk-eproof','chk-setup'].includes(el.id)) el.classList.add('cond');
+  });
+  document.getElementById('shipAcctWrap').style.display='none';
+  // Reset shipper type buttons
+  ['shipBtn-prepaid','shipBtn-receiver','shipBtn-thirdparty'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.style.background='#fff'; b.style.color='var(--ink2)'; b.style.borderColor='var(--rule)'; }
+  });
+  document.getElementById('shipNumCustomWrap').style.display='none';
+  const snc = document.getElementById('shipNumCustom'); if(snc) { snc.value=''; snc.classList.remove('filled'); }
+  REQ_FIELDS = REQ_FIELDS.filter(f => f !== 'shipNumCustom');
+  document.getElementById('eproofDateWrap').style.display='none';
+  document.getElementById('eproofDate').value='';
+  // Reset In-Hand Date toggle
+  document.getElementById('inhandYes').style.cssText='flex:1;padding:9px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s';
+  document.getElementById('inhandNo').style.cssText='flex:1;padding:9px 0;border-radius:6px;border:1.5px solid var(--rule);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink2);transition:all .15s';
+  document.getElementById('inhandDateWrap').style.display='none';
+  document.getElementById('inhandNoMsg').style.display='none';
+  document.getElementById('inhandDate').value='';
+  document.getElementById('inhandMentioned').value='';
+  REQ_FIELDS = [...REQ_FIELDS_BASE]; // reset to base
+  REQ_CHECKS_DYNAMIC = []; // clear dynamic checks
+  // Reset 3rd party toggle
+  ['party3Yes','party3No'].forEach(id=>{const b=document.getElementById(id);if(b){b.style.background='#fff';b.style.color='var(--ink2)';b.style.borderColor='var(--rule)';}});
+  ['party3YesWrap','party3NoWrap','sec6ShipAcctWrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  const p3v=document.getElementById('party3Val');if(p3v){p3v.value='';p3v.classList.remove('filled');}
+  // sec6ShipAcct input removed — nothing to reset
+  // Reset order kind toggle
+  ['kindRepeat','kindNew'].forEach(id=>{const b=document.getElementById(id);if(b){b.style.background='#fff';b.style.color='var(--ink2)';b.style.borderColor='var(--rule)';}});
+  ['kindRepeatWrap','kindNewWrap'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  const ok=document.getElementById('orderKind');if(ok){ok.value='';ok.classList.remove('filled');}
+  const rv=document.getElementById('chk-repeatverify');if(rv)rv.classList.remove('checked');
+  imprintSel.clear();
+  localStorage.removeItem(DRAFT_KEY);
+  resetAccordion();
+  checkProgress();
+}
+
+// ══════════════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════════════
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.classList.remove('open'); });
+});
+
+// ══════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════
+let toastT;
+function showToast(msg, type='') {
+  clearTimeout(toastT);
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(type==='success'?'success':type==='error'?'error':'')+' show';
+  toastT = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════════════════════════
+// LIVE INPUT TRACKING
+// ══════════════════════════════════════════════════════
+document.querySelectorAll('.tr').forEach(el=>{
+  el.addEventListener('input', checkProgress);
+  el.addEventListener('change', checkProgress);
+});
+
+// ══════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadConfig();
+  loadDraft();
+  checkProgress();
+});
+</script>
+</body>
+</html>
